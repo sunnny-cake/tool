@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 教辅信息收集工具
 
 一个基于 Node.js + Express + Supabase 的教辅信息收集工具，支持表单提交、图片上传和数据导出功能。
@@ -169,3 +170,6 @@ MIT
 - [Supabase 配置指南](./SUPABASE_SETUP.md)
 - [Vercel 部署指南](./VERCEL_DEPLOY.md)
 
+=======
+# tool
+>>>>>>> 66068baf01f98bb12bf6c610263b9ca7b37beb2a
