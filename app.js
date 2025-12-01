@@ -15,9 +15,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 静态文件服务
-const publicPath = path.join(__dirname, 'public');
-app.use(express.static(publicPath));
+const isVercel = Boolean(process.env.VERCEL);
+let publicPath = null;
+
+// 仅在本地开发环境提供静态文件服务
+if (!isVercel) {
+  publicPath = path.join(__dirname, 'public');
+  app.use(express.static(publicPath));
+}
 
 // ==================== Supabase 客户端 ====================
 // 注意：需要在环境变量中配置 SUPABASE_URL 和 SUPABASE_KEY
@@ -49,10 +54,12 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: '服务运行正常' });
 });
 
-// 根路径返回首页（用于本地及 Vercel）
-app.get('/', (req, res) => {
-  res.sendFile(path.join(publicPath, 'index.html'));
-});
+// 本地开发时返回静态首页；Vercel 部署由平台直接托管 public 目录
+if (!isVercel) {
+  app.get('/', (req, res) => {
+    res.sendFile(path.join(publicPath, 'index.html'));
+  });
+}
 
 // 提交表单数据接口
 app.post('/submit', upload.fields([
