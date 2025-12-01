@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教辅信息收集工具</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>教辅信息收集工具</h1>
+            <p class="subtitle">请填写以下信息并上传相关图片</p>
+        </header>
+
+        <form id="submitForm" enctype="multipart/form-data">
+            <!-- 设备序列号 -->
+            <div class="form-group">
+                <label for="deviceSerial">
+                    设备序列号 <span class="required">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    id="deviceSerial" 
+                    name="deviceSerial" 
+                    placeholder="例如：70303D08511200091"
+                    required
+                >
+                <span class="error-message" id="deviceSerialError"></span>
+            </div>
+
+            <!-- 手机号 -->
+            <div class="form-group">
+                <label for="phoneNumber">
+                    手机号 <span class="required">*</span>
+                </label>
+                <input 
+                    type="tel" 
+                    id="phoneNumber" 
+                    name="phoneNumber" 
+                    placeholder="请输入11位手机号"
+                    maxlength="11"
+                    required
+                >
+                <span class="error-message" id="phoneNumberError"></span>
+            </div>
+
+            <!-- ISBN -->
+            <div class="form-group">
+                <label for="isbn">
+                    ISBN <span class="required">*</span>
+                </label>
+                <div class="isbn-input-group">
+                    <input 
+                        type="text" 
+                        id="isbn" 
+                        name="isbn" 
+                        placeholder="请输入或扫描ISBN"
+                        required
+                    >
+                    <button type="button" class="scan-btn" id="scanBtn">
+                        <span class="scan-icon">📷</span>
+                        扫描
+                    </button>
+                </div>
+                <span class="error-message" id="isbnError"></span>
+                <small class="hint">提示：扫描功能为占位按钮，实际使用时需要集成扫码SDK</small>
+            </div>
+
+            <!-- 封皮上传 -->
+            <div class="form-group">
+                <label for="coverImage">
+                    封皮图片 <span class="required">*</span>
+                </label>
+                <div class="upload-area" id="coverUploadArea">
+                    <input 
+                        type="file" 
+                        id="coverImage" 
+                        name="coverImage" 
+                        accept="image/*"
+                        required
+                        style="display: none;"
+                    >
+                    <div class="upload-placeholder" id="coverPlaceholder">
+                        <span class="upload-icon">📷</span>
+                        <p>点击选择封皮图片</p>
+                        <small>支持 JPG、PNG 格式，最大 10MB</small>
+                    </div>
+                    <div class="upload-preview" id="coverPreview" style="display: none;">
+                        <img id="coverPreviewImg" src="" alt="封皮预览">
+                        <button type="button" class="remove-btn" id="coverRemoveBtn">×</button>
+                        <div class="upload-progress" id="coverProgress" style="display: none;">
+                            <div class="progress-bar" id="coverProgressBar"></div>
+                            <span class="progress-text" id="coverProgressText">0%</span>
+                        </div>
+                    </div>
+                </div>
+                <span class="error-message" id="coverImageError"></span>
+            </div>
+
+            <!-- 版权页上传 -->
+            <div class="form-group">
+                <label for="copyrightImage">
+                    版权页图片 <span class="optional">（可选）</span>
+                </label>
+                <div class="upload-area" id="copyrightUploadArea">
+                    <input 
+                        type="file" 
+                        id="copyrightImage" 
+                        name="copyrightImage" 
+                        accept="image/*"
+                        style="display: none;"
+                    >
+                    <div class="upload-placeholder" id="copyrightPlaceholder">
+                        <span class="upload-icon">📷</span>
+                        <p>点击选择版权页图片</p>
+                        <small>支持 JPG、PNG 格式，最大 10MB</small>
+                    </div>
+                    <div class="upload-preview" id="copyrightPreview" style="display: none;">
+                        <img id="copyrightPreviewImg" src="" alt="版权页预览">
+                        <button type="button" class="remove-btn" id="copyrightRemoveBtn">×</button>
+                        <div class="upload-progress" id="copyrightProgress" style="display: none;">
+                            <div class="progress-bar" id="copyrightProgressBar"></div>
+                            <span class="progress-text" id="copyrightProgressText">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 提交按钮 -->
+            <div class="form-group">
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    <span id="submitText">提交信息</span>
+                    <span id="submitLoading" style="display: none;">提交中...</span>
+                </button>
+            </div>
+        </form>
+
+        <!-- 成功/失败提示 -->
+        <div id="messageBox" class="message-box" style="display: none;"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+

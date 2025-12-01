@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教辅信息收集工具 - 后台管理</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <h1>教辅信息收集工具 - 后台管理</h1>
+            <div class="header-actions">
+                <button class="btn btn-primary" id="refreshBtn">刷新数据</button>
+                <button class="btn btn-success" id="exportBtn">导出Excel</button>
+                <a href="index.html" class="btn btn-secondary">返回表单</a>
+            </div>
+        </header>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span class="stat-label">总记录数：</span>
+                <span class="stat-value" id="totalCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">最后更新：</span>
+                <span class="stat-value" id="lastUpdate">--</span>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>设备序列号</th>
+                        <th>手机号</th>
+                        <th>ISBN</th>
+                        <th>封皮图片</th>
+                        <th>版权页图片</th>
+                        <th>提交时间</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="7" class="loading">加载中...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 消息提示 -->
+        <div id="messageBox" class="message-box" style="display: none;"></div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
+
