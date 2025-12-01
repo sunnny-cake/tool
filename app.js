@@ -48,9 +48,10 @@ const upload = multer({
 });
 
 // ==================== 路由配置 ====================
+const withApi = (path) => [path, `/api${path}`];
 
-// 健康检查接口（注意：这里不要再加 /api 前缀，Vercel 的函数本身已经挂在 /api 下）
-app.get('/health', (req, res) => {
+// 健康检查接口
+app.get(withApi('/health'), (req, res) => {
   res.json({ status: 'ok', message: '服务运行正常' });
 });
 
@@ -62,7 +63,7 @@ if (!isVercel) {
 }
 
 // 提交表单数据接口
-app.post('/submit', upload.fields([
+app.post(withApi('/submit'), upload.fields([
   { name: 'coverImage', maxCount: 1 },
   { name: 'copyrightImage', maxCount: 1 }
 ]), async (req, res) => {
@@ -188,7 +189,7 @@ app.post('/submit', upload.fields([
 });
 
 // 获取所有提交数据（用于后台管理）
-app.get('/submissions', async (req, res) => {
+app.get(withApi('/submissions'), async (req, res) => {
   if (!supabase) {
     return res.status(500).json({
       success: false,
@@ -225,7 +226,7 @@ app.get('/submissions', async (req, res) => {
 });
 
 // 导出Excel接口
-app.get('/export-excel', async (req, res) => {
+app.get(withApi('/export-excel'), async (req, res) => {
   if (!supabase) {
     return res.status(500).json({
       success: false,
