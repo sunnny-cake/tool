@@ -220,8 +220,8 @@ form.addEventListener('submit', async function(e) {
             formData.append('copyrightImage', copyrightImageInput.files[0]);
         }
 
-        // 发送请求（注意：这里不再额外加 /api 前缀，Vercel 会自动把请求转到 /api 函数）
-        const response = await fetch('/submit', {
+        // 发送请求（在 Vercel 上通过 /api 前缀访问后端函数，本地同样可用）
+        const response = await fetch('/api/submit', {
             method: 'POST',
             body: formData
         });

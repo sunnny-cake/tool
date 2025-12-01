@@ -26,8 +26,8 @@ async function loadData() {
     refreshBtn.textContent = '加载中...';
 
     try {
-        // 不再额外添加 /api 前缀，Vercel 会将 /api/* 转发到我们的 Express 应用
-        const response = await fetch('/submissions');
+        // 通过 /api 前缀访问后端函数
+        const response = await fetch('/api/submissions');
         const result = await response.json();
 
         if (result.success) {
@@ -109,7 +109,7 @@ exportBtn.addEventListener('click', async function() {
     exportBtn.textContent = '导出中...';
 
     try {
-        const response = await fetch('/export-excel');
+        const response = await fetch('/api/export-excel');
         
         if (!response.ok) {
             throw new Error('导出失败');
