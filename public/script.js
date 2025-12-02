@@ -330,11 +330,16 @@ function startCamera() {
         return;
     }
 
+    // 检测是否为移动设备
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
     const constraints = {
         video: {
             facingMode: currentCameraFacingMode,
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
+            // 竖版拍摄：高度大于宽度，适合书籍封面
+            width: isMobile ? { ideal: 720 } : { ideal: 1080 },
+            height: isMobile ? { ideal: 1280 } : { ideal: 1920 },
+            aspectRatio: { ideal: 0.75 } // 3/4 比例（宽:高 = 3:4，即高是宽的1.33倍）
         }
     };
 

@@ -435,11 +435,14 @@ input[type="tel"]:invalid {
 .camera-area {
     position: relative;
     width: 100%;
-    aspect-ratio: 4/3;
+    aspect-ratio: 3/4; /* 竖版比例，适合书籍封面（高:宽 = 4:3，即高度是宽度的1.33倍） */
     background: #000;
     border-radius: 8px;
     overflow: hidden;
     margin-bottom: 20px;
+    max-width: 400px; /* 限制最大宽度，避免在桌面端过宽 */
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .camera-video {
@@ -715,6 +718,11 @@ input[type="tel"]:invalid {
         max-width: none;
         max-height: none;
         border-radius: 0;
+    }
+
+    .camera-area {
+        max-width: 100%; /* 移动端全宽显示 */
+        aspect-ratio: 3/4; /* 保持竖版比例 */
     }
 
     .camera-actions {
