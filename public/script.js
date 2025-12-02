@@ -257,6 +257,184 @@ window.addEventListener('beforeunload', function() {
     stopScanning();
 });
 
+// ==================== 拍照功能 ====================
+
+let cameraStream = null;
+let currentCameraFacingMode = 'environment';
+let currentImageInput = null; // 当前正在拍照的输入框
+
+// 拍照相关DOM元素
+const cameraModal = document.getElementById('cameraModal');
+const cameraVideo = document.getElementById('cameraVideo');
+const cameraCanvas = document.getElementById('cameraCanvas');
+const cameraCloseBtn = document.getElementById('cameraCloseBtn');
+const cameraCancelBtn = document.getElementById('cameraCancelBtn');
+const cameraSwitchBtn = document.getElementById('cameraSwitchBtn');
+const cameraCaptureBtn = document.getElementById('cameraCaptureBtn');
+const cameraModalTitle = document.getElementById('cameraModalTitle');
+
+// 封皮图片 - 拍照按钮
+document.getElementById('coverCameraBtn').addEventListener('click', function(e) {
+    e.stopPropagation();
+    openCameraModal('coverImage', '封皮图片');
+});
+
+// 封皮图片 - 选择文件按钮
+document.getElementById('coverFileBtn').addEventListener('click', function(e) {
+    e.stopPropagation();
+    coverImageInput.click();
+});
+
+// 版权页图片 - 拍照按钮
+document.getElementById('copyrightCameraBtn').addEventListener('click', function(e) {
+    e.stopPropagation();
+    openCameraModal('copyrightImage', '版权页图片');
+});
+
+// 版权页图片 - 选择文件按钮
+document.getElementById('copyrightFileBtn').addEventListener('click', function(e) {
+    e.stopPropagation();
+    copyrightImageInput.click();
+});
+
+// 打开拍照弹窗
+function openCameraModal(inputId, title) {
+    currentImageInput = inputId;
+    cameraModalTitle.textContent = `拍摄${title}`;
+    cameraModal.style.display = 'flex';
+    startCamera();
+}
+
+// 关闭拍照弹窗
+function closeCameraModal() {
+    cameraModal.style.display = 'none';
+    stopCamera();
+}
+
+// 关闭按钮事件
+cameraCloseBtn.addEventListener('click', closeCameraModal);
+cameraCancelBtn.addEventListener('click', closeCameraModal);
+
+// 切换摄像头
+cameraSwitchBtn.addEventListener('click', function() {
+    currentCameraFacingMode = currentCameraFacingMode === 'environment' ? 'user' : 'environment';
+    stopCamera();
+    setTimeout(() => startCamera(), 300);
+});
+
+// 开始摄像头
+function startCamera() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showMessage('您的浏览器不支持摄像头访问', 'error');
+        closeCameraModal();
+        return;
+    }
+
+    const constraints = {
+        video: {
+            facingMode: currentCameraFacingMode,
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+        }
+    };
+
+    navigator.mediaDevices.getUserMedia(constraints)
+        .then(function(stream) {
+            cameraStream = stream;
+            cameraVideo.srcObject = stream;
+            cameraVideo.play();
+        })
+        .catch(function(err) {
+            console.error('摄像头启动失败:', err);
+            let errorMsg = '摄像头启动失败：';
+            if (err.name === 'NotAllowedError') {
+                errorMsg += '请允许访问摄像头权限';
+            } else if (err.name === 'NotFoundError') {
+                errorMsg += '未找到摄像头设备';
+            } else {
+                errorMsg += err.message || '未知错误';
+            }
+            showMessage(errorMsg, 'error');
+            closeCameraModal();
+        });
+}
+
+// 停止摄像头
+function stopCamera() {
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+    }
+    if (cameraVideo.srcObject) {
+        cameraVideo.srcObject = null;
+    }
+}
+
+// 拍照
+cameraCaptureBtn.addEventListener('click', function() {
+    if (!cameraVideo.videoWidth || !cameraVideo.videoHeight) {
+        showMessage('摄像头未就绪，请稍候', 'error');
+        return;
+    }
+
+    // 设置canvas尺寸
+    cameraCanvas.width = cameraVideo.videoWidth;
+    cameraCanvas.height = cameraVideo.videoHeight;
+
+    // 绘制当前帧到canvas
+    const ctx = cameraCanvas.getContext('2d');
+    ctx.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
+
+    // 将canvas转换为blob
+    cameraCanvas.toBlob(function(blob) {
+        if (!blob) {
+            showMessage('拍照失败，请重试', 'error');
+            return;
+        }
+
+        // 创建File对象
+        const fileName = `photo_${Date.now()}.jpg`;
+        const file = new File([blob], fileName, { type: 'image/jpeg' });
+
+        // 根据当前输入框设置文件
+        if (currentImageInput === 'coverImage') {
+            setFileToInput(coverImageInput, file, 'coverPlaceholder', 'coverPreview', 'coverPreviewImg', 'coverImage');
+        } else if (currentImageInput === 'copyrightImage') {
+            setFileToInput(copyrightImageInput, file, 'copyrightPlaceholder', 'copyrightPreview', 'copyrightPreviewImg', 'copyrightImage');
+        }
+
+        showMessage('拍照成功！', 'success');
+        closeCameraModal();
+    }, 'image/jpeg', 0.9); // 90%质量
+});
+
+// 设置文件到输入框并显示预览
+function setFileToInput(input, file, placeholderId, previewId, previewImgId, fieldName) {
+    // 创建DataTransfer对象来设置文件
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+    input.files = dataTransfer.files;
+
+    // 显示预览
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const previewImg = document.getElementById(previewImgId);
+        if (previewImg) {
+            previewImg.src = e.target.result;
+        }
+        document.getElementById(placeholderId).style.display = 'none';
+        document.getElementById(previewId).style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+
+    clearError(fieldName);
+}
+
+// 页面关闭时清理资源
+window.addEventListener('beforeunload', function() {
+    stopCamera();
+});
+
 // ==================== 图片上传处理 ====================
 
 // 封皮图片上传
@@ -295,10 +473,10 @@ function setupImageUpload(input, placeholderId, previewId, previewImgId, removeB
     const progressBar = document.getElementById(progressBarId);
     const progressText = document.getElementById(progressTextId);
 
-    // 点击占位符选择文件
-    placeholder.addEventListener('click', () => {
-        input.click();
-    });
+    // 点击占位符不再直接打开文件选择器（现在有专门的按钮）
+    // placeholder.addEventListener('click', () => {
+    //     input.click();
+    // });
 
     // 文件选择处理
     input.addEventListener('change', function(e) {

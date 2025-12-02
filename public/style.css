@@ -175,6 +175,48 @@ input[type="tel"]:invalid {
     font-size: 12px;
 }
 
+/* 上传操作按钮组 */
+.upload-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.upload-action-btn {
+    padding: 10px 20px;
+    background: white;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    color: #667eea;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.upload-action-btn:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.upload-action-btn:active {
+    transform: translateY(0);
+}
+
+.upload-action-btn span {
+    font-size: 16px;
+}
+
 .upload-preview {
     position: relative;
     border: 2px solid #e0e0e0;
@@ -322,6 +364,138 @@ input[type="tel"]:invalid {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* ==================== 拍照弹窗样式 ==================== */
+.camera-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.camera-modal-content {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.camera-modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.camera-modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #333;
+}
+
+.camera-close-btn {
+    background: none;
+    border: none;
+    font-size: 32px;
+    color: #999;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.3s;
+}
+
+.camera-close-btn:hover {
+    color: #333;
+}
+
+.camera-modal-body {
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.camera-area {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.camera-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.camera-canvas {
+    display: none;
+}
+
+.camera-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.camera-actions .btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.camera-actions .btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.camera-actions .btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+.camera-actions .btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.camera-actions .btn-primary:hover {
+    background: #5568d3;
+}
+
+.camera-actions .btn-success {
+    background: #4ade80;
+    color: white;
+    font-size: 16px;
+}
+
+.camera-actions .btn-success:hover {
+    background: #22c55e;
 }
 
 /* ==================== 扫码弹窗样式 ==================== */
@@ -524,6 +698,31 @@ input[type="tel"]:invalid {
         max-width: none;
         max-height: none;
         border-radius: 0;
+    }
+
+    .upload-actions {
+        flex-direction: column;
+    }
+
+    .upload-action-btn {
+        width: 100%;
+        min-width: auto;
+    }
+
+    .camera-modal-content {
+        width: 100%;
+        height: 100%;
+        max-width: none;
+        max-height: none;
+        border-radius: 0;
+    }
+
+    .camera-actions {
+        flex-direction: column;
+    }
+
+    .camera-actions .btn {
+        width: 100%;
     }
 }
 

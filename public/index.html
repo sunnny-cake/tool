@@ -87,6 +87,14 @@
                         <span class="upload-icon">📷</span>
                         <p>点击选择封皮图片</p>
                         <small>支持 JPG、PNG 格式，最大 10MB</small>
+                        <div class="upload-actions">
+                            <button type="button" class="upload-action-btn" id="coverCameraBtn">
+                                <span>📸</span> 拍照
+                            </button>
+                            <button type="button" class="upload-action-btn" id="coverFileBtn">
+                                <span>📁</span> 选择文件
+                            </button>
+                        </div>
                     </div>
                     <div class="upload-preview" id="coverPreview" style="display: none;">
                         <img id="coverPreviewImg" src="" alt="封皮预览">
@@ -117,6 +125,14 @@
                         <span class="upload-icon">📷</span>
                         <p>点击选择版权页图片</p>
                         <small>支持 JPG、PNG 格式，最大 10MB</small>
+                        <div class="upload-actions">
+                            <button type="button" class="upload-action-btn" id="copyrightCameraBtn">
+                                <span>📸</span> 拍照
+                            </button>
+                            <button type="button" class="upload-action-btn" id="copyrightFileBtn">
+                                <span>📁</span> 选择文件
+                            </button>
+                        </div>
                     </div>
                     <div class="upload-preview" id="copyrightPreview" style="display: none;">
                         <img id="copyrightPreviewImg" src="" alt="版权页预览">
@@ -140,6 +156,27 @@
 
         <!-- 成功/失败提示 -->
         <div id="messageBox" class="message-box" style="display: none;"></div>
+    </div>
+
+    <!-- 拍照弹窗 -->
+    <div id="cameraModal" class="camera-modal" style="display: none;">
+        <div class="camera-modal-content">
+            <div class="camera-modal-header">
+                <h2 id="cameraModalTitle">拍照</h2>
+                <button class="camera-close-btn" id="cameraCloseBtn">×</button>
+            </div>
+            <div class="camera-modal-body">
+                <div id="cameraArea" class="camera-area">
+                    <video id="cameraVideo" class="camera-video" autoplay playsinline></video>
+                    <canvas id="cameraCanvas" class="camera-canvas"></canvas>
+                </div>
+                <div class="camera-actions">
+                    <button class="btn btn-secondary" id="cameraCancelBtn">取消</button>
+                    <button class="btn btn-primary" id="cameraSwitchBtn">切换摄像头</button>
+                    <button class="btn btn-success" id="cameraCaptureBtn">📸 拍照</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- 扫码弹窗 -->
