@@ -324,6 +324,166 @@ input[type="tel"]:invalid {
     }
 }
 
+/* ==================== 扫码弹窗样式 ==================== */
+.scan-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.scan-modal-content {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.scan-modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.scan-modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #333;
+}
+
+.scan-close-btn {
+    background: none;
+    border: none;
+    font-size: 32px;
+    color: #999;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.3s;
+}
+
+.scan-close-btn:hover {
+    color: #333;
+}
+
+.scan-modal-body {
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.scan-area {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.scan-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.scan-canvas {
+    display: none;
+}
+
+.scan-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.scan-line {
+    width: 80%;
+    height: 2px;
+    background: #4ade80;
+    box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+    animation: scanLine 2s linear infinite;
+}
+
+@keyframes scanLine {
+    0%, 100% {
+        transform: translateY(-50%);
+    }
+    50% {
+        transform: translateY(50%);
+    }
+}
+
+.scan-hint {
+    margin-top: 20px;
+    color: white;
+    font-size: 14px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 8px 16px;
+    border-radius: 4px;
+}
+
+.scan-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.scan-actions .btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.scan-actions .btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.scan-actions .btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+.scan-actions .btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.scan-actions .btn-primary:hover {
+    background: #5568d3;
+}
+
 /* ==================== 响应式设计 ==================== */
 @media (max-width: 640px) {
     .container {
@@ -342,6 +502,14 @@ input[type="tel"]:invalid {
     .scan-btn {
         width: 100%;
         justify-content: center;
+    }
+
+    .scan-modal-content {
+        width: 100%;
+        height: 100%;
+        max-width: none;
+        max-height: none;
+        border-radius: 0;
     }
 }
 

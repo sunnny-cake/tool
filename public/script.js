@@ -64,14 +64,129 @@ isbnInput.addEventListener('input', function() {
     }
 });
 
-// ==================== 扫描按钮（占位功能） ====================
+// ==================== 扫码功能（基于 QuaggaJS） ====================
+
+let currentFacingMode = 'environment'; // 'environment' 后置摄像头, 'user' 前置摄像头
+let scanStream = null;
+
+// 扫描按钮点击事件
 document.getElementById('scanBtn').addEventListener('click', function() {
-    // 提示：这里需要集成实际的扫码SDK
-    // 例如：微信JS-SDK、ZXing、QuaggaJS等
-    alert('扫描功能需要集成扫码SDK。\n\n实际使用时，可以：\n1. 使用微信JS-SDK的扫一扫功能\n2. 使用ZXing等开源库\n3. 调用手机相机API进行识别');
-    
-    // 占位：模拟扫描结果（实际使用时删除）
-    // isbnInput.value = '9787111544937';
+    openScanModal();
+});
+
+// 打开扫码弹窗
+function openScanModal() {
+    const modal = document.getElementById('scanModal');
+    modal.style.display = 'flex';
+    startScanning();
+}
+
+// 关闭扫码弹窗
+function closeScanModal() {
+    const modal = document.getElementById('scanModal');
+    modal.style.display = 'none';
+    stopScanning();
+}
+
+// 关闭按钮事件
+document.getElementById('scanCloseBtn').addEventListener('click', closeScanModal);
+document.getElementById('scanCancelBtn').addEventListener('click', closeScanModal);
+
+// 切换摄像头
+document.getElementById('scanSwitchBtn').addEventListener('click', function() {
+    currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+    stopScanning();
+    setTimeout(() => startScanning(), 300);
+});
+
+// 开始扫码
+function startScanning() {
+    // 检查浏览器是否支持
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showMessage('您的浏览器不支持摄像头访问，请使用现代浏览器（Chrome、Firefox、Safari等）', 'error');
+        closeScanModal();
+        return;
+    }
+
+    Quagga.init({
+        inputStream: {
+            name: 'Live',
+            type: 'LiveStream',
+            target: document.querySelector('#scanVideo'),
+            constraints: {
+                width: { min: 640 },
+                height: { min: 480 },
+                facingMode: currentFacingMode
+            }
+        },
+        decoder: {
+            readers: [
+                'ean_reader',      // EAN-13 (ISBN常用)
+                'ean_8_reader',    // EAN-8
+                'code_128_reader', // Code 128
+                'code_39_reader',  // Code 39
+                'upc_reader',      // UPC
+                'upc_e_reader'     // UPC-E
+            ]
+        },
+        locate: true
+    }, function(err) {
+        if (err) {
+            console.error('扫码初始化失败:', err);
+            showMessage('扫码初始化失败：' + (err.message || '未知错误'), 'error');
+            closeScanModal();
+            return;
+        }
+        Quagga.start();
+    });
+
+    // 监听扫码结果
+    Quagga.onDetected(function(result) {
+        const code = result.codeResult.code;
+        
+        // 验证是否为有效的ISBN格式（10位或13位数字）
+        if (isValidISBN(code)) {
+            isbnInput.value = code;
+            clearError('isbn');
+            showMessage('ISBN扫描成功：' + code, 'success');
+            Quagga.stop();
+            closeScanModal();
+        } else {
+            // 如果不是标准ISBN，也尝试使用（可能是其他条形码）
+            console.log('扫描到的代码:', code);
+            isbnInput.value = code;
+            clearError('isbn');
+            showMessage('已识别：' + code + '（请确认是否为ISBN）', 'success');
+            Quagga.stop();
+            closeScanModal();
+        }
+    });
+}
+
+// 停止扫码
+function stopScanning() {
+    if (Quagga) {
+        Quagga.stop();
+    }
+    // 停止所有媒体流
+    if (scanStream) {
+        scanStream.getTracks().forEach(track => track.stop());
+        scanStream = null;
+    }
+}
+
+// 验证ISBN格式（简单验证：10位或13位数字）
+function isValidISBN(code) {
+    if (!code) return false;
+    // 移除可能的连字符和空格
+    const cleaned = code.replace(/[-\s]/g, '');
+    // 检查是否为10位或13位数字（ISBN-10或ISBN-13）
+    return /^\d{10}$/.test(cleaned) || /^\d{13}$/.test(cleaned);
+}
+
+// 页面关闭时清理资源
+window.addEventListener('beforeunload', function() {
+    stopScanning();
 });
 
 // ==================== 图片上传处理 ====================
