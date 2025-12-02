@@ -570,11 +570,12 @@ input[type="tel"]:invalid {
 .scan-area {
     position: relative;
     width: 100%;
+    max-width: 90%; /* 限制最大宽度，左右留白 */
     aspect-ratio: 4/3;
     background: #000;
     border-radius: 8px;
     overflow: hidden;
-    margin-bottom: 20px;
+    margin: 0 auto 20px auto; /* 居中显示，左右自动留白 */
     min-height: 300px;
 }
 
