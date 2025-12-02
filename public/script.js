@@ -108,17 +108,28 @@ function startScanning() {
         return;
     }
 
-    Quagga.init({
+    // 检测是否为移动设备
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // 移动端使用更灵活的配置
+    const config = {
         inputStream: {
             name: 'Live',
             type: 'LiveStream',
-            target: document.querySelector('#scanVideo'),
-            constraints: {
+            target: document.querySelector('#scanArea'), // 指向容器，不是video元素
+            constraints: isMobile ? {
+                // 移动端使用更宽松的分辨率要求
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+                facingMode: currentFacingMode,
+                aspectRatio: { ideal: 1.7777777778 } // 16:9
+            } : {
                 width: { min: 640 },
                 height: { min: 480 },
                 facingMode: currentFacingMode
             }
         },
+        frequency: 10, // 扫描频率（毫秒）
         decoder: {
             readers: [
                 'ean_reader',      // EAN-13 (ISBN常用)
@@ -127,22 +138,54 @@ function startScanning() {
                 'code_39_reader',  // Code 39
                 'upc_reader',      // UPC
                 'upc_e_reader'     // UPC-E
-            ]
+            ],
+            debug: {
+                drawBoundingBox: false,
+                showFrequency: false,
+                drawScanline: false,
+                showPattern: false
+            }
         },
-        locate: true
-    }, function(err) {
+        locate: true,
+        locator: {
+            patchSize: 'medium',
+            halfSample: true
+        },
+        numOfWorkers: 0 // 移动端禁用Web Workers以提高兼容性
+    };
+
+    Quagga.init(config, function(err) {
         if (err) {
             console.error('扫码初始化失败:', err);
-            showMessage('扫码初始化失败：' + (err.message || '未知错误'), 'error');
+            let errorMsg = '扫码初始化失败：';
+            if (err.message) {
+                errorMsg += err.message;
+            } else if (err.name === 'NotAllowedError') {
+                errorMsg += '请允许访问摄像头权限';
+            } else if (err.name === 'NotFoundError') {
+                errorMsg += '未找到摄像头设备';
+            } else {
+                errorMsg += '未知错误，请检查浏览器权限设置';
+            }
+            showMessage(errorMsg, 'error');
             closeScanModal();
             return;
         }
+        
+        console.log('扫码初始化成功');
         Quagga.start();
+        
+        // 确保视频流显示
+        const video = document.querySelector('#scanVideo');
+        if (video) {
+            video.style.display = 'block';
+        }
     });
 
     // 监听扫码结果
     Quagga.onDetected(function(result) {
         const code = result.codeResult.code;
+        console.log('扫描到代码:', code);
         
         // 验证是否为有效的ISBN格式（10位或13位数字）
         if (isValidISBN(code)) {
@@ -159,6 +202,31 @@ function startScanning() {
             showMessage('已识别：' + code + '（请确认是否为ISBN）', 'success');
             Quagga.stop();
             closeScanModal();
+        }
+    });
+    
+    // 监听处理过程（用于调试）
+    Quagga.onProcessed(function(result) {
+        const drawingCtx = Quagga.canvas.ctx.overlay;
+        const drawingCanvas = Quagga.canvas.dom.overlay;
+
+        if (result) {
+            if (result.boxes) {
+                drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute('width')), parseInt(drawingCanvas.getAttribute('height')));
+                result.boxes.filter(function(box) {
+                    return box !== result.box;
+                }).forEach(function(box) {
+                    Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, drawingCtx, { color: 'green', lineWidth: 2 });
+                });
+            }
+
+            if (result.box) {
+                Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, drawingCtx, { color: '#00F', lineWidth: 2 });
+            }
+
+            if (result.codeResult && result.codeResult.code) {
+                Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, drawingCtx, { color: 'red', lineWidth: 3 });
+            }
         }
     });
 }

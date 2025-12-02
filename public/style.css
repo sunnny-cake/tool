@@ -398,6 +398,20 @@ input[type="tel"]:invalid {
     border-radius: 8px;
     overflow: hidden;
     margin-bottom: 20px;
+    min-height: 300px;
+}
+
+/* QuaggaJS 自动创建的 video 元素 */
+.scan-area video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* QuaggaJS 自动创建的 canvas 元素 */
+.scan-area canvas {
+    display: none;
 }
 
 .scan-video {
