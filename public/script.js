@@ -401,36 +401,31 @@ cameraCaptureBtn.addEventListener('click', function() {
         const fileName = `photo_${Date.now()}.jpg`;
         let file = new File([blob], fileName, { type: 'image/jpeg' });
 
-        // 如果文件超过2MB，自动压缩
+        // 所有拍照图片都进行压缩优化
         const originalFileSize = blob.size;
-        if (originalFileSize > MAX_IMAGE_SIZE) {
-            showMessage('正在压缩图片...', 'success');
-            compressImage(file, function(compressedFile) {
-                const originalSize = (originalFileSize / 1024 / 1024).toFixed(2);
-                const compressedSize = (compressedFile.size / 1024 / 1024).toFixed(2);
-                
-                // 根据当前输入框设置文件
-                if (currentImageInput === 'coverImage') {
-                    setFileToInput(coverImageInput, compressedFile, 'coverPlaceholder', 'coverPreview', 'coverPreviewImg', 'coverImage');
-                } else if (currentImageInput === 'copyrightImage') {
-                    setFileToInput(copyrightImageInput, compressedFile, 'copyrightPlaceholder', 'copyrightPreview', 'copyrightPreviewImg', 'copyrightImage');
-                }
-
-                showMessage(`拍照成功！已压缩：${originalSize}MB → ${compressedSize}MB`, 'success');
-                closeCameraModal();
-            });
-        } else {
-            // 文件小于2MB，直接使用
+        if (originalFileSize > TARGET_IMAGE_SIZE) {
+            showMessage('正在优化图片大小...', 'success');
+        }
+        
+        compressImage(file, function(compressedFile) {
+            const originalSize = (originalFileSize / 1024 / 1024).toFixed(2);
+            const compressedSize = (compressedFile.size / 1024 / 1024).toFixed(2);
+            
             // 根据当前输入框设置文件
             if (currentImageInput === 'coverImage') {
-                setFileToInput(coverImageInput, file, 'coverPlaceholder', 'coverPreview', 'coverPreviewImg', 'coverImage');
+                setFileToInput(coverImageInput, compressedFile, 'coverPlaceholder', 'coverPreview', 'coverPreviewImg', 'coverImage');
             } else if (currentImageInput === 'copyrightImage') {
-                setFileToInput(copyrightImageInput, file, 'copyrightPlaceholder', 'copyrightPreview', 'copyrightPreviewImg', 'copyrightImage');
+                setFileToInput(copyrightImageInput, compressedFile, 'copyrightPlaceholder', 'copyrightPreview', 'copyrightPreviewImg', 'copyrightImage');
             }
 
-            showMessage('拍照成功！', 'success');
+            // 显示压缩结果（如果文件大小有明显变化）
+            if (originalFileSize > compressedFile.size * 1.2) {
+                showMessage(`拍照成功！已优化：${originalSize}MB → ${compressedSize}MB`, 'success');
+            } else {
+                showMessage('拍照成功！', 'success');
+            }
             closeCameraModal();
-        }
+        });
     }, 'image/jpeg', 0.9); // 90%质量
 });
 
@@ -463,21 +458,18 @@ window.addEventListener('beforeunload', function() {
 
 // ==================== 图片压缩功能 ====================
 
-const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
+const TARGET_IMAGE_SIZE = 800 * 1024; // 目标大小：800KB（既能看清信息，又节省存储空间）
 const MAX_IMAGE_WIDTH = 1920; // 最大宽度
 const MAX_IMAGE_HEIGHT = 2560; // 最大高度（竖版）
+const MAX_UPLOAD_SIZE = 10 * 1024 * 1024; // 上传上限：10MB
 
 /**
- * 压缩图片
+ * 压缩图片（所有图片都压缩，优化存储空间）
  * @param {File} file - 原始图片文件
  * @param {Function} callback - 回调函数，参数为压缩后的File对象
  */
 function compressImage(file, callback) {
-    // 如果文件小于2MB，直接返回
-    if (file.size <= MAX_IMAGE_SIZE) {
-        callback(file);
-        return;
-    }
+    // 所有图片都进行压缩，无论原始大小
 
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -503,10 +495,12 @@ function compressImage(file, callback) {
             // 绘制图片到canvas
             ctx.drawImage(img, 0, 0, width, height);
 
-            // 尝试不同的质量值，直到文件大小小于2MB
-            let quality = 0.9;
+            // 尝试不同的质量值，直到文件大小小于目标大小（800KB）
+            // 从80%质量开始，逐步降低到60%，既能保持清晰度又能控制文件大小
+            let quality = 0.8;
             let attempts = 0;
-            const maxAttempts = 10;
+            const maxAttempts = 5; // 最多尝试5次（80% -> 70% -> 60% -> 50% -> 40%）
+            const minQuality = 0.6; // 最低质量60%，保证清晰度
 
             function tryCompress() {
                 canvas.toBlob(function(blob) {
@@ -515,15 +509,15 @@ function compressImage(file, callback) {
                         return;
                     }
 
-                    // 如果压缩后小于2MB，或者已经尝试多次，使用当前结果
-                    if (blob.size <= MAX_IMAGE_SIZE || attempts >= maxAttempts) {
+                    // 如果压缩后小于目标大小（800KB），或者已经尝试多次，或质量已降到最低，使用当前结果
+                    if (blob.size <= TARGET_IMAGE_SIZE || attempts >= maxAttempts || quality <= minQuality) {
                         const compressedFile = new File([blob], file.name, {
                             type: 'image/jpeg',
                             lastModified: Date.now()
                         });
                         callback(compressedFile);
                     } else {
-                        // 继续降低质量
+                        // 继续降低质量（每次降10%）
                         quality -= 0.1;
                         attempts++;
                         canvas.toBlob(tryCompress, 'image/jpeg', quality);
@@ -603,49 +597,42 @@ function setupImageUpload(input, placeholderId, previewId, previewImgId, removeB
                 return;
             }
 
-            // 验证文件大小（10MB上限，超过会自动压缩）
-            if (file.size > 10 * 1024 * 1024) {
+            // 验证文件大小（10MB上限）
+            if (file.size > MAX_UPLOAD_SIZE) {
                 showError(fieldName, '图片大小不能超过10MB');
                 return;
             }
 
             clearError(fieldName);
 
-            // 如果文件超过2MB，自动压缩
-            if (file.size > MAX_IMAGE_SIZE) {
+            // 所有图片都进行压缩优化（节省存储空间）
+            const originalSize = (file.size / 1024 / 1024).toFixed(2);
+            if (file.size > TARGET_IMAGE_SIZE) {
                 // 显示压缩提示
-                showMessage('图片较大，正在自动压缩...', 'success');
-                
-                compressImage(file, function(compressedFile) {
-                    // 将压缩后的文件设置到input
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(compressedFile);
-                    input.files = dataTransfer.files;
+                showMessage('正在优化图片大小...', 'success');
+            }
+            
+            compressImage(file, function(compressedFile) {
+                // 将压缩后的文件设置到input
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(compressedFile);
+                input.files = dataTransfer.files;
 
-                    // 显示预览
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        previewImg.src = e.target.result;
-                        placeholder.style.display = 'none';
-                        preview.style.display = 'block';
-                        
-                        // 显示压缩结果
-                        const originalSize = (file.size / 1024 / 1024).toFixed(2);
-                        const compressedSize = (compressedFile.size / 1024 / 1024).toFixed(2);
-                        showMessage(`图片已压缩：${originalSize}MB → ${compressedSize}MB`, 'success');
-                    };
-                    reader.readAsDataURL(compressedFile);
-                });
-            } else {
-                // 文件小于2MB，直接显示预览
+                // 显示预览
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     previewImg.src = e.target.result;
                     placeholder.style.display = 'none';
                     preview.style.display = 'block';
+                    
+                    // 显示压缩结果（如果文件大小有明显变化）
+                    const compressedSize = (compressedFile.size / 1024 / 1024).toFixed(2);
+                    if (file.size > compressedFile.size * 1.2) { // 如果压缩后明显变小（超过20%）
+                        showMessage(`图片已优化：${originalSize}MB → ${compressedSize}MB`, 'success');
+                    }
                 };
-                reader.readAsDataURL(file);
-            }
+                reader.readAsDataURL(compressedFile);
+            });
         }
     });
 
