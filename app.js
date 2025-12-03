@@ -41,51 +41,62 @@ const supabase = supabaseUrl && supabaseKey
 
 // ==================== 存储桶检查和初始化 ====================
 
+// 存储桶名称（支持大小写不敏感查找）
+const BUCKET_NAME = 'images'; // 默认名称
+
+// 实际使用的存储桶名称（会在检查时自动确定）
+let actualBucketName = BUCKET_NAME;
+
 /**
- * 检查并确保存储桶存在
+ * 检查并确保存储桶存在，自动检测实际名称（不区分大小写）
  */
 async function ensureStorageBucket() {
-  if (!supabase) return false;
+  if (!supabase) {
+    console.error('❌ Supabase 客户端未初始化');
+    return false;
+  }
 
   try {
     // 检查存储桶是否存在
     const { data: buckets, error: listError } = await supabase.storage.listBuckets();
     
     if (listError) {
-      console.error('检查存储桶失败:', listError);
+      console.error('❌ 检查存储桶失败:', listError);
       return false;
     }
 
-    // 查找 images 存储桶
-    const imagesBucket = buckets.find(bucket => bucket.name === 'images');
+    if (!buckets || buckets.length === 0) {
+      console.warn('⚠️  未找到任何存储桶');
+      return false;
+    }
+
+    console.log('📦 找到的存储桶列表:', buckets.map(b => b.name).join(', '));
+
+    // 不区分大小写查找存储桶
+    const imagesBucket = buckets.find(bucket => 
+      bucket.name.toLowerCase() === BUCKET_NAME.toLowerCase()
+    );
     
     if (!imagesBucket) {
-      console.warn('⚠️  存储桶 "images" 不存在，尝试创建...');
-      
-      // 尝试创建存储桶
-      const { data, error: createError } = await supabase.storage.createBucket('images', {
-        public: true, // 设置为公开
-        fileSizeLimit: 10485760, // 10MB
-        allowedMimeTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-      });
+      console.error('❌ 存储桶 "' + BUCKET_NAME + '" 不存在');
+      console.log('💡 可用的存储桶:', buckets.map(b => b.name).join(', '));
+      console.log('💡 请确保存储桶名称正确（区分大小写）');
+      return false;
+    }
 
-      if (createError) {
-        console.error('创建存储桶失败:', createError);
-        console.error('请手动在 Supabase 控制台创建名为 "images" 的公开存储桶');
-        return false;
-      }
+    // 使用实际存储桶名称（保持原始大小写）
+    actualBucketName = imagesBucket.name;
+    console.log('✅ 找到存储桶:', actualBucketName);
+    console.log('   - 是否公开:', imagesBucket.public ? '是' : '否');
+    console.log('   - 创建时间:', imagesBucket.created_at);
 
-      console.log('✅ 存储桶 "images" 创建成功');
-      
-      // 创建公开访问策略
-      // 注意：Supabase Storage 策略需要通过 SQL 创建，这里只创建存储桶
-      console.warn('⚠️  请手动在 Supabase 控制台为 "images" 存储桶添加公开读取策略');
-      return true;
+    if (!imagesBucket.public) {
+      console.warn('⚠️  存储桶未设置为公开，图片可能无法通过URL访问');
     }
 
     return true;
   } catch (error) {
-    console.error('存储桶检查异常:', error);
+    console.error('❌ 存储桶检查异常:', error);
     return false;
   }
 }
@@ -177,21 +188,26 @@ app.post(withApi('/submit'), upload.fields([
       });
     }
 
-    // 上传封皮图片
-    const { error: coverError } = await supabase.storage
-      .from('images')
+    console.log('📤 开始上传封皮图片到存储桶:', actualBucketName);
+    console.log('   - 文件名:', coverFileName);
+    console.log('   - 文件大小:', (coverFile.size / 1024).toFixed(2), 'KB');
+
+    // 上传封皮图片（使用实际存储桶名称）
+    const { error: coverError, data: coverUploadData } = await supabase.storage
+      .from(actualBucketName)
       .upload(coverFileName, coverFile.buffer, {
         contentType: coverFile.mimetype,
         upsert: false
       });
 
     if (coverError) {
-      console.error('封皮上传错误:', coverError);
+      console.error('❌ 封皮上传错误:', coverError);
+      console.error('   - 错误详情:', JSON.stringify(coverError, null, 2));
       let errorMessage = '封皮图片上传失败：' + coverError.message;
       
       // 如果是存储桶不存在错误，提供更友好的提示
       if (coverError.message && coverError.message.includes('Bucket not found')) {
-        errorMessage = '存储桶不存在：请在 Supabase 控制台创建名为 "images" 的公开存储桶。详见 SUPABASE_SETUP.md';
+        errorMessage = `存储桶不存在：当前使用的存储桶名称是 "${actualBucketName}"，请检查 Supabase 控制台中的存储桶名称是否正确。详见 SUPABASE_SETUP.md`;
       }
       
       return res.status(500).json({
@@ -200,30 +216,46 @@ app.post(withApi('/submit'), upload.fields([
       });
     }
 
-    // 获取封皮图片公开URL
+    console.log('✅ 封皮图片上传成功');
+    if (coverUploadData) {
+      console.log('   - 上传路径:', coverUploadData.path);
+    }
+
+    // 获取封皮图片公开URL（使用实际存储桶名称）
     const { data: coverUrlData } = supabase.storage
-      .from('images')
+      .from(actualBucketName)
       .getPublicUrl(coverFileName);
     const coverUrl = coverUrlData.publicUrl;
+    console.log('   - 公开URL:', coverUrl);
 
     // 上传版权页图片（如果存在）
     let copyrightUrl = null;
     if (copyrightFile) {
-      const { error: copyrightError } = await supabase.storage
-        .from('images')
+      console.log('📤 开始上传版权页图片到存储桶:', actualBucketName);
+      console.log('   - 文件名:', copyrightFileName);
+      console.log('   - 文件大小:', (copyrightFile.size / 1024).toFixed(2), 'KB');
+
+      const { error: copyrightError, data: copyrightUploadData } = await supabase.storage
+        .from(actualBucketName)
         .upload(copyrightFileName, copyrightFile.buffer, {
           contentType: copyrightFile.mimetype,
           upsert: false
         });
 
       if (copyrightError) {
-        console.error('版权页上传错误:', copyrightError);
+        console.error('❌ 版权页上传错误:', copyrightError);
+        console.error('   - 错误详情:', JSON.stringify(copyrightError, null, 2));
         // 版权页上传失败不影响主流程
       } else {
+        console.log('✅ 版权页图片上传成功');
+        if (copyrightUploadData) {
+          console.log('   - 上传路径:', copyrightUploadData.path);
+        }
         const { data: copyrightUrlData } = supabase.storage
-          .from('images')
+          .from(actualBucketName)
           .getPublicUrl(copyrightFileName);
         copyrightUrl = copyrightUrlData.publicUrl;
+        console.log('   - 公开URL:', copyrightUrl);
       }
     }
 
