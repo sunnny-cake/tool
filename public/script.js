@@ -399,17 +399,38 @@ cameraCaptureBtn.addEventListener('click', function() {
 
         // 创建File对象
         const fileName = `photo_${Date.now()}.jpg`;
-        const file = new File([blob], fileName, { type: 'image/jpeg' });
+        let file = new File([blob], fileName, { type: 'image/jpeg' });
 
-        // 根据当前输入框设置文件
-        if (currentImageInput === 'coverImage') {
-            setFileToInput(coverImageInput, file, 'coverPlaceholder', 'coverPreview', 'coverPreviewImg', 'coverImage');
-        } else if (currentImageInput === 'copyrightImage') {
-            setFileToInput(copyrightImageInput, file, 'copyrightPlaceholder', 'copyrightPreview', 'copyrightPreviewImg', 'copyrightImage');
+        // 如果文件超过2MB，自动压缩
+        const originalFileSize = blob.size;
+        if (originalFileSize > MAX_IMAGE_SIZE) {
+            showMessage('正在压缩图片...', 'success');
+            compressImage(file, function(compressedFile) {
+                const originalSize = (originalFileSize / 1024 / 1024).toFixed(2);
+                const compressedSize = (compressedFile.size / 1024 / 1024).toFixed(2);
+                
+                // 根据当前输入框设置文件
+                if (currentImageInput === 'coverImage') {
+                    setFileToInput(coverImageInput, compressedFile, 'coverPlaceholder', 'coverPreview', 'coverPreviewImg', 'coverImage');
+                } else if (currentImageInput === 'copyrightImage') {
+                    setFileToInput(copyrightImageInput, compressedFile, 'copyrightPlaceholder', 'copyrightPreview', 'copyrightPreviewImg', 'copyrightImage');
+                }
+
+                showMessage(`拍照成功！已压缩：${originalSize}MB → ${compressedSize}MB`, 'success');
+                closeCameraModal();
+            });
+        } else {
+            // 文件小于2MB，直接使用
+            // 根据当前输入框设置文件
+            if (currentImageInput === 'coverImage') {
+                setFileToInput(coverImageInput, file, 'coverPlaceholder', 'coverPreview', 'coverPreviewImg', 'coverImage');
+            } else if (currentImageInput === 'copyrightImage') {
+                setFileToInput(copyrightImageInput, file, 'copyrightPlaceholder', 'copyrightPreview', 'copyrightPreviewImg', 'copyrightImage');
+            }
+
+            showMessage('拍照成功！', 'success');
+            closeCameraModal();
         }
-
-        showMessage('拍照成功！', 'success');
-        closeCameraModal();
     }, 'image/jpeg', 0.9); // 90%质量
 });
 
@@ -439,6 +460,95 @@ function setFileToInput(input, file, placeholderId, previewId, previewImgId, fie
 window.addEventListener('beforeunload', function() {
     stopCamera();
 });
+
+// ==================== 图片压缩功能 ====================
+
+const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_IMAGE_WIDTH = 1920; // 最大宽度
+const MAX_IMAGE_HEIGHT = 2560; // 最大高度（竖版）
+
+/**
+ * 压缩图片
+ * @param {File} file - 原始图片文件
+ * @param {Function} callback - 回调函数，参数为压缩后的File对象
+ */
+function compressImage(file, callback) {
+    // 如果文件小于2MB，直接返回
+    if (file.size <= MAX_IMAGE_SIZE) {
+        callback(file);
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            // 计算压缩后的尺寸（保持宽高比）
+            let width = img.width;
+            let height = img.height;
+
+            // 如果图片太大，先缩小尺寸
+            if (width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT) {
+                const ratio = Math.min(MAX_IMAGE_WIDTH / width, MAX_IMAGE_HEIGHT / height);
+                width = width * ratio;
+                height = height * ratio;
+            }
+
+            // 创建canvas进行压缩
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+
+            // 绘制图片到canvas
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // 尝试不同的质量值，直到文件大小小于2MB
+            let quality = 0.9;
+            let attempts = 0;
+            const maxAttempts = 10;
+
+            function tryCompress() {
+                canvas.toBlob(function(blob) {
+                    if (!blob) {
+                        callback(file); // 压缩失败，返回原文件
+                        return;
+                    }
+
+                    // 如果压缩后小于2MB，或者已经尝试多次，使用当前结果
+                    if (blob.size <= MAX_IMAGE_SIZE || attempts >= maxAttempts) {
+                        const compressedFile = new File([blob], file.name, {
+                            type: 'image/jpeg',
+                            lastModified: Date.now()
+                        });
+                        callback(compressedFile);
+                    } else {
+                        // 继续降低质量
+                        quality -= 0.1;
+                        attempts++;
+                        canvas.toBlob(tryCompress, 'image/jpeg', quality);
+                    }
+                }, 'image/jpeg', quality);
+            }
+
+            tryCompress();
+        };
+
+        img.onerror = function() {
+            console.error('图片加载失败');
+            callback(file); // 加载失败，返回原文件
+        };
+
+        img.src = e.target.result;
+    };
+
+    reader.onerror = function() {
+        console.error('文件读取失败');
+        callback(file); // 读取失败，返回原文件
+    };
+
+    reader.readAsDataURL(file);
+}
 
 // ==================== 图片上传处理 ====================
 
@@ -493,7 +603,7 @@ function setupImageUpload(input, placeholderId, previewId, previewImgId, removeB
                 return;
             }
 
-            // 验证文件大小（10MB）
+            // 验证文件大小（10MB上限，超过会自动压缩）
             if (file.size > 10 * 1024 * 1024) {
                 showError(fieldName, '图片大小不能超过10MB');
                 return;
@@ -501,14 +611,41 @@ function setupImageUpload(input, placeholderId, previewId, previewImgId, removeB
 
             clearError(fieldName);
 
-            // 显示预览
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                previewImg.src = e.target.result;
-                placeholder.style.display = 'none';
-                preview.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
+            // 如果文件超过2MB，自动压缩
+            if (file.size > MAX_IMAGE_SIZE) {
+                // 显示压缩提示
+                showMessage('图片较大，正在自动压缩...', 'success');
+                
+                compressImage(file, function(compressedFile) {
+                    // 将压缩后的文件设置到input
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(compressedFile);
+                    input.files = dataTransfer.files;
+
+                    // 显示预览
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewImg.src = e.target.result;
+                        placeholder.style.display = 'none';
+                        preview.style.display = 'block';
+                        
+                        // 显示压缩结果
+                        const originalSize = (file.size / 1024 / 1024).toFixed(2);
+                        const compressedSize = (compressedFile.size / 1024 / 1024).toFixed(2);
+                        showMessage(`图片已压缩：${originalSize}MB → ${compressedSize}MB`, 'success');
+                    };
+                    reader.readAsDataURL(compressedFile);
+                });
+            } else {
+                // 文件小于2MB，直接显示预览
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    placeholder.style.display = 'none';
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
         }
     });
 
