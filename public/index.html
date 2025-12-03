@@ -20,6 +20,7 @@
             <div class="form-group">
                 <label for="deviceSerial">
                     设备序列号 <span class="required">*</span>
+                    <span class="help-icon" id="deviceSerialHelp" title="点击查看设备序列号位置">❓</span>
                 </label>
                 <input 
                     type="text" 
@@ -156,6 +157,22 @@
 
         <!-- 成功/失败提示 -->
         <div id="messageBox" class="message-box" style="display: none;"></div>
+    </div>
+
+    <!-- 设备序列号帮助弹窗 -->
+    <div id="helpModal" class="help-modal" style="display: none;">
+        <div class="help-modal-content">
+            <div class="help-modal-header">
+                <h2>如何找到设备序列号？</h2>
+                <button class="help-close-btn" id="helpCloseBtn">×</button>
+            </div>
+            <div class="help-modal-body">
+                <div class="help-image-container">
+                    <img id="helpImage" src="https://via.placeholder.com/600x400/667eea/ffffff?text=设备序列号位置示意图" alt="设备序列号位置示意图">
+                    <p class="help-image-note">提示：设备序列号通常位于设备背面或设置菜单中</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- 拍照弹窗 -->

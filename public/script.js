@@ -12,6 +12,62 @@ const submitText = document.getElementById('submitText');
 const submitLoading = document.getElementById('submitLoading');
 const messageBox = document.getElementById('messageBox');
 
+// 帮助弹窗相关元素
+const helpModal = document.getElementById('helpModal');
+const helpCloseBtn = document.getElementById('helpCloseBtn');
+const deviceSerialHelp = document.getElementById('deviceSerialHelp');
+const helpImage = document.getElementById('helpImage');
+
+// ==================== 帮助提示功能 ====================
+
+// 打开帮助弹窗
+function openHelpModal() {
+    if (helpModal) {
+        helpModal.style.display = 'flex';
+        // 阻止背景滚动
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// 关闭帮助弹窗
+function closeHelpModal() {
+    if (helpModal) {
+        helpModal.style.display = 'none';
+        // 恢复背景滚动
+        document.body.style.overflow = '';
+    }
+}
+
+// 点击问号图标打开帮助
+if (deviceSerialHelp) {
+    deviceSerialHelp.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        openHelpModal();
+    });
+}
+
+// 点击关闭按钮
+if (helpCloseBtn) {
+    helpCloseBtn.addEventListener('click', closeHelpModal);
+}
+
+// 点击背景关闭弹窗
+if (helpModal) {
+    helpModal.addEventListener('click', function(e) {
+        if (e.target === helpModal) {
+            closeHelpModal();
+        }
+    });
+}
+
+// ESC 键关闭弹窗
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && helpModal && helpModal.style.display === 'flex') {
+        closeHelpModal();
+    }
+});
+
 // ==================== 表单验证 ====================
 
 // 清除错误提示
