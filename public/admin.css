@@ -103,6 +103,73 @@ body {
     flex-wrap: wrap;
 }
 
+/* ==================== 筛选栏样式 ==================== */
+.filter-bar {
+    padding: 20px 32px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.filter-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.btn-filter-clear {
+    padding: 6px 12px;
+    background: #f0f0f0;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    color: #666;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-filter-clear:hover {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.filter-inputs {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 150px;
+    flex: 1;
+}
+
+.filter-group label {
+    font-size: 12px;
+    color: #666;
+    font-weight: 500;
+}
+
+.filter-group input {
+    padding: 8px 12px;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.filter-group input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
 .stat-item {
     display: flex;
     align-items: center;
@@ -242,6 +309,18 @@ tbody tr:last-child td {
     .stats-bar {
         flex-direction: column;
         gap: 12px;
+    }
+
+    .filter-bar {
+        padding: 16px;
+    }
+
+    .filter-inputs {
+        flex-direction: column;
+    }
+
+    .filter-group {
+        min-width: 100%;
     }
 
     .table-container {

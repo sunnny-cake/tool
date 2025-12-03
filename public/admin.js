@@ -8,7 +8,8 @@ const totalCount = document.getElementById('totalCount');
 const lastUpdate = document.getElementById('lastUpdate');
 const messageBox = document.getElementById('messageBox');
 
-let submissionsData = [];
+let submissionsData = []; // 原始数据
+let filteredData = []; // 筛选后的数据
 
 // ==================== 页面加载时获取数据 ====================
 document.addEventListener('DOMContentLoaded', function() {
@@ -32,8 +33,7 @@ async function loadData() {
 
         if (result.success) {
             submissionsData = result.data || [];
-            renderTable(submissionsData);
-            updateStats(submissionsData);
+            applyFilter(); // 加载数据后应用筛选
             showMessage('数据加载成功', 'success');
         } else {
             showMessage('加载失败：' + result.message, 'error');
@@ -96,7 +96,16 @@ function renderTable(data) {
 
 // ==================== 更新统计信息 ====================
 function updateStats(data) {
-    totalCount.textContent = data.length;
+    const totalCountEl = document.getElementById('totalCount');
+    const filteredCountEl = document.getElementById('filteredCount');
+    
+    if (totalCountEl) {
+        totalCountEl.textContent = submissionsData.length; // 总记录数
+    }
+    if (filteredCountEl) {
+        filteredCountEl.textContent = data.length; // 筛选后的记录数
+    }
+    
     if (data.length > 0) {
         const latest = data[0];
         if (latest.created_at) {
@@ -109,9 +118,111 @@ function updateStats(data) {
     }
 }
 
+// ==================== 筛选功能 ====================
+
+// 筛选输入框
+const filterDeviceSerial = document.getElementById('filterDeviceSerial');
+const filterPhoneNumber = document.getElementById('filterPhoneNumber');
+const filterISBN = document.getElementById('filterISBN');
+const filterDateFrom = document.getElementById('filterDateFrom');
+const filterDateTo = document.getElementById('filterDateTo');
+const clearFilterBtn = document.getElementById('clearFilterBtn');
+
+// 绑定筛选事件（实时筛选）
+if (filterDeviceSerial) {
+    filterDeviceSerial.addEventListener('input', applyFilter);
+}
+if (filterPhoneNumber) {
+    filterPhoneNumber.addEventListener('input', applyFilter);
+}
+if (filterISBN) {
+    filterISBN.addEventListener('input', applyFilter);
+}
+if (filterDateFrom) {
+    filterDateFrom.addEventListener('change', applyFilter);
+}
+if (filterDateTo) {
+    filterDateTo.addEventListener('change', applyFilter);
+}
+if (clearFilterBtn) {
+    clearFilterBtn.addEventListener('click', clearFilter);
+}
+
+// 应用筛选
+function applyFilter() {
+    if (!submissionsData || submissionsData.length === 0) {
+        filteredData = [];
+        renderTable(filteredData);
+        updateStats(filteredData);
+        return;
+    }
+
+    // 获取筛选条件
+    const deviceSerial = (filterDeviceSerial?.value || '').trim().toLowerCase();
+    const phoneNumber = (filterPhoneNumber?.value || '').trim();
+    const isbn = (filterISBN?.value || '').trim().toLowerCase();
+    const dateFrom = filterDateFrom?.value || '';
+    const dateTo = filterDateTo?.value || '';
+
+    // 筛选数据
+    filteredData = submissionsData.filter(item => {
+        // 设备序列号筛选
+        if (deviceSerial && !(item.device_serial || '').toLowerCase().includes(deviceSerial)) {
+            return false;
+        }
+
+        // 手机号筛选
+        if (phoneNumber && !(item.phone_number || '').includes(phoneNumber)) {
+            return false;
+        }
+
+        // ISBN筛选
+        if (isbn && !(item.isbn || '').toLowerCase().includes(isbn)) {
+            return false;
+        }
+
+        // 日期范围筛选
+        if (dateFrom || dateTo) {
+            const itemDate = item.created_at ? new Date(item.created_at) : null;
+            if (!itemDate) return false;
+
+            if (dateFrom) {
+                const fromDate = new Date(dateFrom);
+                fromDate.setHours(0, 0, 0, 0);
+                if (itemDate < fromDate) return false;
+            }
+
+            if (dateTo) {
+                const toDate = new Date(dateTo);
+                toDate.setHours(23, 59, 59, 999);
+                if (itemDate > toDate) return false;
+            }
+        }
+
+        return true;
+    });
+
+    // 重新渲染表格
+    renderTable(filteredData);
+    updateStats(filteredData);
+}
+
+// 清除筛选
+function clearFilter() {
+    if (filterDeviceSerial) filterDeviceSerial.value = '';
+    if (filterPhoneNumber) filterPhoneNumber.value = '';
+    if (filterISBN) filterISBN.value = '';
+    if (filterDateFrom) filterDateFrom.value = '';
+    if (filterDateTo) filterDateTo.value = '';
+    applyFilter();
+}
+
 // ==================== 导出Excel ====================
 exportBtn.addEventListener('click', async function() {
-    if (submissionsData.length === 0) {
+    // 导出筛选后的数据
+    const dataToExport = filteredData.length > 0 ? filteredData : submissionsData;
+    
+    if (dataToExport.length === 0) {
         showMessage('暂无数据可导出', 'error');
         return;
     }

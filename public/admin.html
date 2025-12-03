@@ -23,8 +23,42 @@
                 <span class="stat-value" id="totalCount">0</span>
             </div>
             <div class="stat-item">
+                <span class="stat-label">筛选结果：</span>
+                <span class="stat-value" id="filteredCount">0</span>
+            </div>
+            <div class="stat-item">
                 <span class="stat-label">最后更新：</span>
                 <span class="stat-value" id="lastUpdate">--</span>
+            </div>
+        </div>
+
+        <!-- 筛选区域 -->
+        <div class="filter-bar">
+            <div class="filter-title">
+                <span>🔍 筛选条件</span>
+                <button class="btn-filter-clear" id="clearFilterBtn">清除筛选</button>
+            </div>
+            <div class="filter-inputs">
+                <div class="filter-group">
+                    <label for="filterDeviceSerial">设备序列号</label>
+                    <input type="text" id="filterDeviceSerial" placeholder="输入设备序列号">
+                </div>
+                <div class="filter-group">
+                    <label for="filterPhoneNumber">手机号</label>
+                    <input type="text" id="filterPhoneNumber" placeholder="输入手机号">
+                </div>
+                <div class="filter-group">
+                    <label for="filterISBN">ISBN</label>
+                    <input type="text" id="filterISBN" placeholder="输入ISBN">
+                </div>
+                <div class="filter-group">
+                    <label for="filterDateFrom">开始日期</label>
+                    <input type="date" id="filterDateFrom">
+                </div>
+                <div class="filter-group">
+                    <label for="filterDateTo">结束日期</label>
+                    <input type="date" id="filterDateTo">
+                </div>
             </div>
         </div>
 
@@ -53,6 +87,8 @@
         <div id="messageBox" class="message-box" style="display: none;"></div>
     </div>
 
+    <!-- XLSX 库（用于前端Excel导出） -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="admin.js"></script>
 </body>
 </html>
