@@ -508,6 +508,34 @@ input[type="tel"]:invalid {
     border-radius: 8px;
 }
 
+.help-steps {
+    margin-top: 20px;
+    text-align: left;
+}
+
+.help-steps-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 12px;
+}
+
+.help-steps-list {
+    margin: 0;
+    padding-left: 24px;
+    color: #555;
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+.help-steps-list li {
+    margin-bottom: 8px;
+}
+
+.help-steps-list li:last-child {
+    margin-bottom: 0;
+}
+
 /* ==================== 拍照弹窗样式 ==================== */
 .camera-modal {
     position: fixed;
