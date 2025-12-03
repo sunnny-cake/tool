@@ -57,13 +57,24 @@ function renderTable(data) {
     }
 
     tableBody.innerHTML = data.map((item, index) => {
-        const coverLink = item.cover_image_url 
-            ? `<a href="${item.cover_image_url}" target="_blank" class="image-link">查看图片</a>`
-            : '<span class="image-link">-</span>';
+        // 检查图片URL是否有效
+        const isValidUrl = (url) => {
+            if (!url) return false;
+            try {
+                const urlObj = new URL(url);
+                return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+            } catch {
+                return false;
+            }
+        };
+
+        const coverLink = item.cover_image_url && isValidUrl(item.cover_image_url)
+            ? `<a href="${item.cover_image_url}" target="_blank" class="image-link" onclick="return checkImageUrl(this.href, event)">查看图片</a>`
+            : '<span class="image-link" title="图片URL无效或不存在">-</span>';
         
-        const copyrightLink = item.copyright_image_url 
-            ? `<a href="${item.copyright_image_url}" target="_blank" class="image-link">查看图片</a>`
-            : '<span class="image-link">-</span>';
+        const copyrightLink = item.copyright_image_url && isValidUrl(item.copyright_image_url)
+            ? `<a href="${item.copyright_image_url}" target="_blank" class="image-link" onclick="return checkImageUrl(this.href, event)">查看图片</a>`
+            : '<span class="image-link" title="图片URL无效或不存在">-</span>';
 
         const submitTime = item.created_at 
             ? new Date(item.created_at).toLocaleString('zh-CN')
@@ -157,5 +168,13 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// 检查图片URL是否可访问
+function checkImageUrl(url, event) {
+    // 不阻止默认行为，让链接正常打开
+    // 如果图片404，浏览器会显示错误，这是正常的
+    // 这里可以添加额外的错误处理逻辑
+    return true;
 }
 

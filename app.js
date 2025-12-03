@@ -39,6 +39,64 @@ const supabase = supabaseUrl && supabaseKey
   ? createClient(supabaseUrl, supabaseKey)
   : null;
 
+// ==================== 存储桶检查和初始化 ====================
+
+/**
+ * 检查并确保存储桶存在
+ */
+async function ensureStorageBucket() {
+  if (!supabase) return false;
+
+  try {
+    // 检查存储桶是否存在
+    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+    
+    if (listError) {
+      console.error('检查存储桶失败:', listError);
+      return false;
+    }
+
+    // 查找 images 存储桶
+    const imagesBucket = buckets.find(bucket => bucket.name === 'images');
+    
+    if (!imagesBucket) {
+      console.warn('⚠️  存储桶 "images" 不存在，尝试创建...');
+      
+      // 尝试创建存储桶
+      const { data, error: createError } = await supabase.storage.createBucket('images', {
+        public: true, // 设置为公开
+        fileSizeLimit: 10485760, // 10MB
+        allowedMimeTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+      });
+
+      if (createError) {
+        console.error('创建存储桶失败:', createError);
+        console.error('请手动在 Supabase 控制台创建名为 "images" 的公开存储桶');
+        return false;
+      }
+
+      console.log('✅ 存储桶 "images" 创建成功');
+      
+      // 创建公开访问策略
+      // 注意：Supabase Storage 策略需要通过 SQL 创建，这里只创建存储桶
+      console.warn('⚠️  请手动在 Supabase 控制台为 "images" 存储桶添加公开读取策略');
+      return true;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('存储桶检查异常:', error);
+    return false;
+  }
+}
+
+// 应用启动时检查存储桶（仅本地开发环境）
+if (!process.env.VERCEL && supabase) {
+  ensureStorageBucket().catch(err => {
+    console.error('存储桶初始化失败:', err);
+  });
+}
+
 // ==================== 文件上传配置（Multer） ====================
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -110,6 +168,15 @@ app.post(withApi('/submit'), upload.fields([
       ? `copyrights/${timestamp}_${randomSuffix}${copyrightExt}`
       : null;
 
+    // 确保存储桶存在
+    const bucketExists = await ensureStorageBucket();
+    if (!bucketExists) {
+      return res.status(500).json({
+        success: false,
+        message: '存储桶配置错误：请确保 Supabase Storage 中存在名为 "images" 的公开存储桶'
+      });
+    }
+
     // 上传封皮图片
     const { error: coverError } = await supabase.storage
       .from('images')
@@ -120,9 +187,16 @@ app.post(withApi('/submit'), upload.fields([
 
     if (coverError) {
       console.error('封皮上传错误:', coverError);
+      let errorMessage = '封皮图片上传失败：' + coverError.message;
+      
+      // 如果是存储桶不存在错误，提供更友好的提示
+      if (coverError.message && coverError.message.includes('Bucket not found')) {
+        errorMessage = '存储桶不存在：请在 Supabase 控制台创建名为 "images" 的公开存储桶。详见 SUPABASE_SETUP.md';
+      }
+      
       return res.status(500).json({
         success: false,
-        message: '封皮图片上传失败：' + coverError.message
+        message: errorMessage
       });
     }
 
